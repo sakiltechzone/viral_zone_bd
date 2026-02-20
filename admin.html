@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>অ্যাডমিন প্যানেল | Viral Zone BD</title>
+    <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&family=Poppins:wght@500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Hind Siliguri', 'Poppins', sans-serif; background: #eef2f5; padding: 20px; margin: 0; color: #333; }
+        .container { max-width: 850px; margin: 0 auto; }
+        .header { text-align: center; margin-bottom: 30px; }
+        .header h1 { color: #2c3e50; font-size: 28px; margin: 0; }
+        .header p { color: #7f8c8d; margin-top: 5px; }
+        
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 25px; border-top: 4px solid #3742fa; }
+        .card-settings { border-top-color: #ff4757; } 
+        
+        h3 { margin-top: 0; color: #2c3e50; border-bottom: 2px solid #f0f2f5; padding-bottom: 10px; font-size: 18px; }
+        
+        label { font-weight: 600; font-size: 14px; color: #555; display: block; margin-top: 15px; margin-bottom: 5px; }
+        input { width: 100%; padding: 12px; border: 1px solid #dcdde1; border-radius: 8px; box-sizing: border-box; font-family: inherit; transition: 0.3s; font-size: 14px;}
+        input:focus { border-color: #3742fa; outline: none; box-shadow: 0 0 5px rgba(55, 66, 250, 0.2); }
+
+        .btn-group { display: flex; gap: 10px; margin-top: 20px; }
+        button { padding: 12px 20px; border: none; border-radius: 8px; cursor: pointer; color: white; font-weight: 600; font-family: inherit; transition: 0.3s; flex: 1; font-size: 15px; }
+        .btn-save { background: #2ed573; } .btn-save:hover { background: #26b963; }
+        .btn-settings { background: #ff4757; } .btn-settings:hover { background: #ff3344; }
+        .btn-cancel { background: #95a5a6; display: none; } .btn-cancel:hover { background: #7f8c8d; }
+        
+        /* আপডেট করা ভিডিও লিস্ট ডিজাইন */
+        .video-item { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding: 15px 0; gap: 10px; }
+        .video-item:last-child { border-bottom: none; }
+        .video-info { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; }
+        .video-info img { width: 70px; height: 45px; object-fit: cover; border-radius: 6px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); flex-shrink: 0; }
+        .video-details { flex: 1; min-width: 0; }
+        .video-details h4 { margin: 0 0 5px 0; font-size: 14px; color: #2f3640; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .video-details p { margin: 0; font-size: 12px; color: #7f8c8d; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        
+        .action-btns { display: flex; gap: 8px; flex-shrink: 0; }
+        .action-btns button { padding: 8px 12px; font-size: 13px; flex: none; border-radius: 6px; }
+        .btn-edit { background: #ffa502; } .btn-edit:hover { background: #e59400; }
+        .btn-delete { background: #ff4757; } .btn-delete:hover { background: #ff3344; }
+
+        .video-count { background: #3742fa; color: white; padding: 2px 8px; border-radius: 12px; font-size: 12px; margin-left: 10px; vertical-align: middle; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1>Viral Zone BD <i class="fas fa-bolt" style="color:#ff4757;"></i></h1>
+        <p>টেলিগ্রাম বট অ্যাডমিন প্যানেল</p>
+    </div>
+
+    <div class="card card-settings">
+        <h3><i class="fas fa-cog"></i> গ্লোবাল অ্যাড সেটিংস (Ad Networks)</h3>
+        
+        <label>Adsgram Block ID:</label>
+        <input type="text" id="setAdsgramId" placeholder="আপনার Adsgram ID দিন...">
+        
+        <label>Adsterra Direct Link:</label>
+        <input type="text" id="setAdsterraLink" placeholder="Adsterra ডাইরেক্ট লিংক দিন...">
+        
+        <div class="btn-group">
+            <button class="btn-settings" onclick="saveAdSettings()"><i class="fas fa-save"></i> অ্যাড সেটিংস সেভ করুন</button>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3 id="formTitle"><i class="fas fa-plus-circle"></i> নতুন ভিডিও যুক্ত করুন</h3>
+        <input type="hidden" id="editKey">
+        
+        <label>ভিডিওর টাইটেল (যা ইউজার দেখবে)</label>
+        <input type="text" id="vTitle" placeholder="যেমন: ভাইরাল স্ক্যান্ডাল ভিডিও পার্ট ১ 🔞">
+        
+        <label>থাম্বনেইল লিংক (ছবির লিংক)</label>
+        <input type="text" id="vThumb" placeholder="যেমন: https://example.com/image.jpg">
+        
+        <label>GIF লিংক (হোভার/প্লে করলে যা দেখাবে - অপশনাল)</label>
+        <input type="text" id="vGif" placeholder="যেমন: https://example.com/preview.gif">
+        
+        <label>আসল ভিডিওর লিংক (৩টি অ্যাড দেখার পর যেখানে যাবে)</label>
+        <input type="text" id="vLink" placeholder="যেমন: https://t.me/YourChannel/15">
+        
+        <div class="btn-group">
+            <button class="btn-save" id="btnSave" onclick="saveVideo()"><i class="fas fa-upload"></i> ভিডিও পাবলিশ করুন</button>
+            <button class="btn-cancel" id="btnCancel" onclick="cancelEdit()"><i class="fas fa-times"></i> বাতিল করুন</button>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3><i class="fas fa-list"></i> বটের ভিডিও লিস্ট <span class="video-count" id="videoCounter">0 টি</span></h3>
+        <div id="videoList">
+            <p style="text-align:center; color:#7f8c8d; padding: 20px;">লোড হচ্ছে...</p>
+        </div>
+    </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyAl0eRqOs5QNUg_J1Pj-4PlEqRDxAXr-oA",
+        authDomain: "viral-zone-bd.firebaseapp.com",
+        projectId: "viral-zone-bd",
+        storageBucket: "viral-zone-bd.firebasestorage.app",
+        messagingSenderId: "794737483555",
+        appId: "1:794737483555:web:a275cd96aafff0e640f696",
+        databaseURL: "https://viral-zone-bd-default-rtdb.firebaseio.com"
+    };
+
+    let db;
+    
+    if(firebaseConfig.apiKey) {
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        db = firebase.database();
+        loadSettings(); 
+        loadVideos();   
+    }
+
+    function saveAdSettings() {
+        if(!db) return alert("ফায়ারবেস কানেক্ট করা হয়নি!");
+        
+        const adsgramId = document.getElementById('setAdsgramId').value;
+        const adsterraLink = document.getElementById('setAdsterraLink').value;
+
+        db.ref('siteConfig').update({
+            adsgramId: adsgramId,
+            adsterraLink: adsterraLink
+        }).then(() => {
+            alert("✅ গ্লোবাল অ্যাড সেটিংস আপডেট হয়েছে!");
+        });
+    }
+
+    function loadSettings() {
+        db.ref('siteConfig').on('value', (snap) => {
+            const data = snap.val();
+            if(data) {
+                document.getElementById('setAdsgramId').value = data.adsgramId || "";
+                document.getElementById('setAdsterraLink').value = data.adsterraLink || "";
+            }
+        });
+    }
+
+    function saveVideo() {
+        if(!db) return alert("ফায়ারবেস কানেক্ট করা হয়নি!");
+
+        const key = document.getElementById('editKey').value;
+        const title = document.getElementById('vTitle').value;
+        const thumb = document.getElementById('vThumb').value;
+        const gif = document.getElementById('vGif').value;
+        const link = document.getElementById('vLink').value;
+
+        if(!title || !thumb || !link) {
+            return alert("দয়া করে টাইটেল, থাম্বনেইল এবং আসল ভিডিও লিংক দিন!");
+        }
+
+        const videoData = {
+            title: title,
+            thumb: thumb,
+            gif: gif,
+            link: link,
+            timestamp: Date.now()
+        };
+
+        if(key) {
+            db.ref('bot_videos').child(key).update(videoData).then(() => {
+                alert("✅ ভিডিও আপডেট হয়েছে!");
+                cancelEdit();
+            });
+        } else {
+            db.ref('bot_videos').push(videoData).then(() => {
+                alert("✅ নতুন ভিডিও পাবলিশ হয়েছে!");
+                cancelEdit();
+            });
+        }
+    }
+
+    function loadVideos() {
+        db.ref('bot_videos').orderByChild('timestamp').on('value', (snap) => {
+            const list = document.getElementById('videoList');
+            let html = "";
+            let count = 0;
+            let videosArray = [];
+
+            snap.forEach(child => {
+                videosArray.push({ key: child.key, ...child.val() });
+                count++;
+            });
+            
+            videosArray.reverse();
+            document.getElementById('videoCounter').innerText = count + " টি আপলোড হয়েছে";
+
+            if(count === 0) {
+                list.innerHTML = "<p style='text-align:center; color:#7f8c8d; padding:20px;'>কোনো ভিডিও নেই। উপরের ফর্ম থেকে যুক্ত করুন।</p>";
+                return;
+            }
+
+            videosArray.forEach(v => {
+                const cleanData = JSON.stringify(v).replace(/"/g, '&quot;');
+                const gifTag = v.gif ? '<span style="color:#3742fa; font-size:10px; border:1px solid #3742fa; padding:1px 4px; border-radius:4px; margin-left:5px;">GIF</span>' : '';
+
+                html += `
+                <div class="video-item">
+                    <div class="video-info">
+                        <img src="${v.thumb}" onerror="this.src='https://via.placeholder.com/80x50?text=No+Image'">
+                        <div class="video-details">
+                            <h4>${v.title} ${gifTag}</h4>
+                            <p title="${v.link}">${v.link}</p>
+                        </div>
+                    </div>
+                    <div class="action-btns">
+                        <button class="btn-edit" onclick="editVideo('${cleanData}')"><i class="fas fa-edit"></i></button>
+                        <button class="btn-delete" onclick="deleteVideo('${v.key}')"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>`;
+            });
+            
+            list.innerHTML = html;
+        });
+    }
+
+    function editVideo(jsonString) {
+        const data = JSON.parse(jsonString);
+        document.getElementById('editKey').value = data.key;
+        document.getElementById('vTitle').value = data.title;
+        document.getElementById('vThumb').value = data.thumb;
+        document.getElementById('vGif').value = data.gif || '';
+        document.getElementById('vLink').value = data.link;
+        
+        document.getElementById('formTitle').innerHTML = '<i class="fas fa-edit"></i> ভিডিও এডিট করুন';
+        document.getElementById('btnSave').innerHTML = '<i class="fas fa-sync"></i> আপডেট করুন';
+        document.getElementById('btnCancel').style.display = "block";
+        window.scrollTo(0, 300); 
+    }
+
+    function cancelEdit() {
+        document.getElementById('editKey').value = "";
+        document.getElementById('vTitle').value = "";
+        document.getElementById('vThumb').value = "";
+        document.getElementById('vGif').value = "";
+        document.getElementById('vLink').value = "";
+        
+        document.getElementById('formTitle').innerHTML = '<i class="fas fa-plus-circle"></i> নতুন ভিডিও যুক্ত করুন';
+        document.getElementById('btnSave').innerHTML = '<i class="fas fa-upload"></i> ভিডিও পাবলিশ করুন';
+        document.getElementById('btnCancel').style.display = "none";
+    }
+
+    function deleteVideo(key) {
+        if(confirm("আপনি কি নিশ্চিত যে এই ভিডিওটি ডিলিট করতে চান?")) {
+            db.ref('bot_videos').child(key).remove();
+        }
+    }
+</script>
+</body>
+</html>
