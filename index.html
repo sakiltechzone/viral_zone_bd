@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Viral Zone BD</title>
+    
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --brand-color: #ff4757;
+            --brand-gradient: linear-gradient(135deg, #ff6b81, #ff4757);
+            --bg-color: var(--tg-theme-bg-color, #121212);
+            --card-bg: rgba(255, 255, 255, 0.05);
+            --text-main: var(--tg-theme-text-color, #ffffff);
+            --text-muted: var(--tg-theme-hint-color, #a4b0be);
+        }
+
+        body { font-family: 'Hind Siliguri', 'Poppins', sans-serif; background-color: var(--bg-color); color: var(--text-main); margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; text-align: center; }
+
+        .brand-header h1 { font-family: 'Poppins', sans-serif; font-size: 26px; font-weight: 700; margin: 0 0 20px 0; background: var(--brand-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+        .card { background: var(--card-bg); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 20px; padding: 20px; width: 100%; max-width: 360px; box-shadow: 0 15px 35px rgba(0,0,0,0.4); }
+
+        .thumbnail-container { position: relative; width: 100%; height: 200px; border-radius: 14px; overflow: hidden; background: #000; margin-bottom: 15px; cursor: pointer; }
+        
+        .thumbnail-container img { width: 100%; height: 100%; object-fit: cover; filter: blur(2.5px) brightness(0.65); transition: all 0.3s ease; }
+
+        .lock-icon { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 45px; color: var(--brand-color); animation: pulseLock 2s infinite; pointer-events: none; }
+        
+        /* 🔥 Play ব্যাজের স্টাইল (চারকোনা ও বর্ডার সহ) */
+        .gif-badge { 
+            position: absolute; 
+            top: 10px; 
+            right: 10px; 
+            background: rgba(0,0,0,0.7); /* আগের মতো একটু হালকা ব্যাকগ্রাউন্ড */
+            color: #fff; 
+            font-size: 12px; 
+            padding: 5px 10px; 
+            border-radius: 4px; /* ✅ চারকোনা করা হয়েছে */
+            border: 1px solid var(--brand-color); /* ✅ লাল বর্ডার ফেরত আনা হয়েছে */
+            display: none; 
+            font-weight: 600; 
+            pointer-events: none; 
+        }
+
+        h2 { margin: 0 0 5px 0; font-size: 18px; line-height: 1.4; height: 50px; overflow: hidden;}
+        
+        .progress-container { background: rgba(0, 0, 0, 0.3); border-radius: 12px; padding: 12px; margin-bottom: 20px; }
+        .progress-header { display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 8px; }
+        .progress-header span.highlight { color: #2ed573; font-weight: 700; }
+        .progress-bar-bg { width: 100%; height: 8px; background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
+        .progress-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #2ed573, #7bed9f); border-radius: 10px; transition: width 0.3s; }
+
+        .btn-group { display: flex; gap: 10px; width: 100%; }
+        .btn { flex: 1; padding: 14px; border: none; border-radius: 12px; font-size: 15px; font-weight: 600; font-family: inherit; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: 0.2s; }
+        .btn-next { background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); color: #dfe4ea; }
+        .btn-next:active { background: rgba(255, 255, 255, 0.2); transform: scale(0.97); }
+        .btn-ad { background: linear-gradient(135deg, #3742fa, #5352ed); box-shadow: 0 4px 15px rgba(55, 66, 250, 0.4); flex: 2; }
+        .btn-ad:active { transform: scale(0.97); }
+        .btn-ad:disabled { background: #57606f; cursor: not-allowed; }
+
+        .loader { border: 3px solid rgba(255,255,255,0.3); border-radius: 50%; border-top: 3px solid #ff4757; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 0 auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes pulseLock { 0% { transform: translate(-50%, -50%) scale(1); } 50% { transform: translate(-50%, -50%) scale(1.15); } 100% { transform: translate(-50%, -50%) scale(1); } }
+    </style>
+</head>
+<body>
+
+    <div class="brand-header">
+        <h1>Viral Zone BD <i class="fas fa-fire" style="color:#ff4757;"></i></h1>
+    </div>
+
+    <div id="loadingDiv" style="text-align:center; padding: 50px;">
+        <div class="loader"></div>
+        <p style="margin-top:15px; color:#a4b0be; font-size:14px;">ভিডিও লোড হচ্ছে...</p>
+    </div>
+
+    <div class="card" id="videoCard" style="display: none;">
+        <div class="thumbnail-container" onclick="playGifPreview()">
+            <img src="" alt="Thumbnail" id="videoThumb">
+            <i class="fas fa-lock lock-icon"></i>
+            <div id="gifBadge" class="gif-badge"><i class="fas fa-play" style="font-size: 10px;"></i> Play</div>
+        </div>
+        
+        <h2 id="videoTitle">লোড হচ্ছে...</h2>
+        
+        <div class="progress-container">
+            <div class="progress-header">
+                <span>আনলক স্ট্যাটাস</span>
+                <span class="highlight"><span id="adsWatched">0</span>/3 সম্পন্ন</span>
+            </div>
+            <div class="progress-bar-bg">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+        </div>
+
+        <div class="btn-group">
+            <button class="btn btn-next" onclick="nextVideo()">
+                Next <i class="fas fa-forward"></i>
+            </button>
+            <button class="btn btn-ad" id="watchAdBtn" onclick="handleAdClick()">
+                <i class="fas fa-play-circle"></i> অ্যাড দেখুন (0/3)
+            </button>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAl0eRqOs5QNUg_J1Pj-4PlEqRDxAXr-oA",
+            authDomain: "viral-zone-bd.firebaseapp.com",
+            projectId: "viral-zone-bd",
+            storageBucket: "viral-zone-bd.firebasestorage.app",
+            messagingSenderId: "794737483555",
+            appId: "1:794737483555:web:a275cd96aafff0e640f696",
+            databaseURL: "https://viral-zone-bd-default-rtdb.firebaseio.com"
+        };
+
+        let db;
+        let siteConfig = { adsgramId: "", adsterraLink: "" };
+        let videos = [];
+        let currentIndex = 0;
+        let adsWatchedCount = 0;
+        const requiredAds = 3;
+        let adsController = null;
+
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        db = firebase.database();
+        
+        fetchData();
+
+        function fetchData() {
+            db.ref('siteConfig').on('value', snap => {
+                if(snap.val()) {
+                    siteConfig = snap.val();
+                    if(siteConfig.adsgramId && !adsController) {
+                        try {
+                            adsController = window.Adsgram.init({ blockId: siteConfig.adsgramId });
+                        } catch(e) { console.error("Adsgram Error", e); }
+                    }
+                }
+            });
+
+            db.ref('bot_videos').orderByChild('timestamp').once('value', snap => {
+                let tempVideos = [];
+                snap.forEach(child => { tempVideos.push(child.val()); });
+                videos = tempVideos.reverse(); 
+                
+                if(videos.length > 0) {
+                    document.getElementById('loadingDiv').style.display = 'none';
+                    document.getElementById('videoCard').style.display = 'block';
+                    updateUI();
+                } else {
+                    document.getElementById('loadingDiv').innerHTML = "<p style='color:#ff4757;'>অ্যাডমিন প্যানেলে কোনো ভিডিও নেই!</p>";
+                }
+            });
+        }
+
+        function updateUI() {
+            if(videos.length === 0) return;
+            const currentVideo = videos[currentIndex];
+            
+            document.getElementById('videoTitle').innerText = currentVideo.title;
+            
+            const imgElement = document.getElementById('videoThumb');
+            imgElement.src = currentVideo.thumb;
+            imgElement.style.filter = "blur(2.5px) brightness(0.65)";
+            
+            if(currentVideo.gif) {
+                document.getElementById('gifBadge').style.display = "block";
+            } else {
+                document.getElementById('gifBadge').style.display = "none";
+            }
+            
+            adsWatchedCount = 0;
+            
+            const btn = document.getElementById('watchAdBtn');
+            btn.innerHTML = `<i class="fas fa-play-circle"></i> অ্যাড দেখুন (0/${requiredAds})`;
+            btn.style.background = "linear-gradient(135deg, #3742fa, #5352ed)";
+            btn.disabled = false;
+            
+            updateProgress();
+        }
+
+        function playGifPreview() {
+            const currentVideo = videos[currentIndex];
+            if(currentVideo.gif) {
+                const imgElement = document.getElementById('videoThumb');
+                imgElement.src = currentVideo.gif;
+                imgElement.style.filter = "blur(1px) brightness(0.85)";
+                document.getElementById('gifBadge').style.display = "none"; 
+                if(tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+            }
+        }
+
+        function updateProgress() {
+            document.getElementById('adsWatched').innerText = adsWatchedCount;
+            const percentage = (adsWatchedCount / requiredAds) * 100;
+            document.getElementById('progressFill').style.width = percentage + '%';
+        }
+
+        function nextVideo() {
+            currentIndex++;
+            if(currentIndex >= videos.length) currentIndex = 0; 
+            updateUI();
+            if(tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+        }
+
+        function handleAdClick() {
+            if(adsWatchedCount >= requiredAds) {
+                if(siteConfig.adsterraLink && siteConfig.adsterraLink.trim() !== "") {
+                    window.open(siteConfig.adsterraLink, '_blank');
+                    setTimeout(() => {
+                         window.location.href = videos[currentIndex].link;
+                    }, 500);
+                }
+                return;
+            }
+            showAdsgram();
+        }
+
+        function showAdsgram() {
+            const btn = document.getElementById('watchAdBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> লোড হচ্ছে...';
+
+            if (adsController) {
+                adsController.show().then((result) => {
+                    adsWatchedCount++;
+                    updateProgress();
+                    
+                    if (adsWatchedCount >= requiredAds) {
+                        if(siteConfig.adsterraLink && siteConfig.adsterraLink.trim() !== "") {
+                            btn.disabled = false;
+                            btn.innerHTML = '<i class="fas fa-unlock"></i> আনলকড ভিডিওটি দেখুন';
+                            btn.style.background = "linear-gradient(135deg, #ff9f43, #ff6b6b)";
+                            if(tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+                        } else {
+                            btn.innerHTML = '<i class="fas fa-check-circle"></i> রিডাইরেক্ট হচ্ছে...';
+                            btn.style.background = "linear-gradient(135deg, #2ed573, #2bad60)";
+                            if(tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+                            
+                            setTimeout(() => {
+                                window.location.href = videos[currentIndex].link; 
+                            }, 800);
+                        }
+                    } else {
+                        btn.disabled = false;
+                        btn.innerHTML = `<i class="fas fa-play-circle"></i> অ্যাড দেখুন (${adsWatchedCount}/${requiredAds})`;
+                        if(tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
+                    }
+                }).catch((result) => {
+                    btn.disabled = false;
+                    btn.innerHTML = `<i class="fas fa-play-circle"></i> অ্যাড দেখুন (${adsWatchedCount}/${requiredAds})`;
+                    tg.showAlert("⚠️ আপনি অ্যাডটি সম্পূর্ণ দেখেননি বা লোড হয়নি। আবার চেষ্টা করুন।");
+                });
+            } else {
+                tg.showAlert("অ্যাড সিস্টেম লোড হয়নি। অ্যাডমিন প্যানেলে Adsgram ID সেট করা আছে কি না চেক করুন।");
+                btn.disabled = false;
+                btn.innerHTML = `<i class="fas fa-play-circle"></i> অ্যাড দেখুন (${adsWatchedCount}/${requiredAds})`;
+            }
+        }
+    </script>
+</body>
+</html>
