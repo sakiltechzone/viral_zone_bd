@@ -27,11 +27,14 @@
 
         .card { background: var(--card-bg); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 20px; padding: 20px; width: 100%; max-width: 360px; box-shadow: 0 15px 35px rgba(0,0,0,0.4); }
 
-        .thumbnail-container { position: relative; width: 100%; height: 200px; border-radius: 14px; overflow: hidden; background: #000; margin-bottom: 15px; }
+        .thumbnail-container { position: relative; width: 100%; height: 200px; border-radius: 14px; overflow: hidden; background: #000; margin-bottom: 15px; cursor: pointer; }
         
-        .thumbnail-container img { width: 100%; height: 100%; object-fit: cover; filter: blur(2.5px) brightness(0.65); transition: all 0.3s ease; }
+        /* এখানে ব্লার কমানো হয়েছে (blur 0px করা হয়েছে) */
+        .thumbnail-container img { width: 100%; height: 100%; object-fit: cover; filter: blur(0px) brightness(0.85); transition: all 0.3s ease; }
 
         .lock-icon { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 45px; color: var(--brand-color); animation: pulseLock 2s infinite; pointer-events: none; }
+        
+        .gif-badge { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.7); color: #fff; font-size: 12px; padding: 5px 10px; border-radius: 4px; border: 1px solid var(--brand-color); display: none; font-weight: 600; pointer-events: none; }
 
         h2 { margin: 0 0 5px 0; font-size: 18px; line-height: 1.4; height: 50px; overflow: hidden;}
         
@@ -62,13 +65,14 @@
 
     <div id="loadingDiv" style="text-align:center; padding: 50px;">
         <div class="loader"></div>
-        <p style="margin-top:15px; color:#a4b0be; font-size:14px;">লোড হচ্ছে...</p>
+        <p style="margin-top:15px; color:#a4b0be; font-size:14px;">ভিডিও লোড হচ্ছে...</p>
     </div>
 
     <div class="card" id="videoCard" style="display: none;">
-        <div class="thumbnail-container" id="thumbContainer">
+        <div class="thumbnail-container" id="thumbContainer" onclick="playGifPreview()">
             <img src="" alt="Thumbnail" id="videoThumb">
             <i class="fas fa-lock lock-icon" id="lockIcon"></i>
+            <div id="gifBadge" class="gif-badge"><i class="fas fa-play" style="font-size: 10px;"></i> Play</div>
         </div>
         
         <h2 id="videoTitle">লোড হচ্ছে...</h2>
@@ -111,7 +115,7 @@
         };
 
         let db;
-        let siteConfig = { adsgramId: "", requiredAds: 3 }; // ডিফল্ট ৩টি অ্যাড
+        let siteConfig = { adsgramId: "", requiredAds: 3 };
         let requiredAdsCount = 3;
         let videos = [];
         let currentIndex = 0;
@@ -124,13 +128,13 @@
         fetchData();
 
         function fetchData() {
-            // অ্যাডমিন প্যানেলের সেটিংস আনা হচ্ছে
+            // ডাটাবেস থেকে অ্যাডমিন প্যানেলের সেটিংস আনা হচ্ছে
             db.ref('siteConfig').on('value', snap => {
                 if(snap.val()) {
                     siteConfig = snap.val();
                     requiredAdsCount = parseInt(siteConfig.requiredAds) || 3;
                     document.getElementById('totalAdsNeeded').innerText = requiredAdsCount;
-                    
+
                     if(siteConfig.adsgramId && !adsController) {
                         try {
                             adsController = window.Adsgram.init({ blockId: siteConfig.adsgramId });
@@ -140,11 +144,10 @@
                 }
             });
 
-            // আনলিমিটেড ভিডিওগুলো ডাটাবেস থেকে আনা হচ্ছে
-            db.ref('bot_videos').orderByChild('timestamp').on('value', snap => {
+            db.ref('bot_videos').orderByChild('timestamp').once('value', snap => {
                 let tempVideos = [];
                 snap.forEach(child => { tempVideos.push(child.val()); });
-                videos = tempVideos.reverse(); // নতুন ভিডিও আগে দেখাবে
+                videos = tempVideos.reverse(); 
                 
                 if(videos.length > 0) {
                     document.getElementById('loadingDiv').style.display = 'none';
@@ -162,19 +165,37 @@
             
             document.getElementById('videoTitle').innerText = currentVideo.title;
             
+            // থাম্বনেইল ফ্রেম রিসেট করা হচ্ছে (ব্লার কমানো হয়েছে)
             const container = document.getElementById('thumbContainer');
             container.innerHTML = `
-                <img src="${currentVideo.thumb}" alt="Thumbnail" id="videoThumb" style="width: 100%; height: 100%; object-fit: cover; filter: blur(2.5px) brightness(0.65); transition: all 0.3s ease;">
+                <img src="${currentVideo.thumb}" alt="Thumbnail" id="videoThumb" style="width: 100%; height: 100%; object-fit: cover; filter: blur(0px) brightness(0.85); transition: all 0.3s ease;">
                 <i class="fas fa-lock lock-icon" id="lockIcon"></i>
+                <div id="gifBadge" class="gif-badge" style="display: ${currentVideo.gif ? 'block' : 'none'};"><i class="fas fa-play" style="font-size: 10px;"></i> Play</div>
             `;
+            container.onclick = playGifPreview;
             
             adsWatchedCount = 0;
+            
             const btn = document.getElementById('watchAdBtn');
             btn.innerHTML = `<i class="fas fa-play-circle"></i> অ্যাড দেখুন (0/${requiredAdsCount})`;
             btn.style.background = "linear-gradient(135deg, #3742fa, #5352ed)";
             btn.disabled = false;
             
             updateProgress();
+        }
+
+        function playGifPreview() {
+            const currentVideo = videos[currentIndex];
+            if(currentVideo.gif) {
+                const imgElement = document.getElementById('videoThumb');
+                const badgeElement = document.getElementById('gifBadge');
+                if(imgElement) {
+                    imgElement.src = currentVideo.gif;
+                    imgElement.style.filter = "blur(0px) brightness(1)";
+                }
+                if(badgeElement) badgeElement.style.display = "none"; 
+                if(tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+            }
         }
 
         function updateProgress() {
@@ -185,7 +206,7 @@
 
         function nextVideo() {
             currentIndex++;
-            if(currentIndex >= videos.length) currentIndex = 0; // সব ভিডিও শেষ হলে আবার প্রথম থেকে শুরু হবে
+            if(currentIndex >= videos.length) currentIndex = 0; 
             updateUI();
             if(tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
         }
@@ -193,6 +214,8 @@
         function unlockVideoInline() {
             const currentVideo = videos[currentIndex];
             const container = document.getElementById('thumbContainer');
+            
+            container.onclick = null;
             
             let isDirectVideo = currentVideo.link.match(/\.(mp4|webm|mkv|ogg)/i);
             
@@ -209,7 +232,9 @@
         }
 
         function handleAdClick() {
-            if(adsWatchedCount >= requiredAdsCount) return;
+            if(adsWatchedCount >= requiredAdsCount) {
+                return;
+            }
             showAdsgram();
         }
 
