@@ -27,27 +27,11 @@
 
         .card { background: var(--card-bg); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 20px; padding: 20px; width: 100%; max-width: 360px; box-shadow: 0 15px 35px rgba(0,0,0,0.4); }
 
-        .thumbnail-container { position: relative; width: 100%; height: 200px; border-radius: 14px; overflow: hidden; background: #000; margin-bottom: 15px; cursor: pointer; }
+        .thumbnail-container { position: relative; width: 100%; height: 200px; border-radius: 14px; overflow: hidden; background: #000; margin-bottom: 15px; }
         
         .thumbnail-container img { width: 100%; height: 100%; object-fit: cover; filter: blur(2.5px) brightness(0.65); transition: all 0.3s ease; }
 
         .lock-icon { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 45px; color: var(--brand-color); animation: pulseLock 2s infinite; pointer-events: none; }
-        
-        /* 🔥 Play ব্যাজের স্টাইল (চারকোনা ও বর্ডার সহ) */
-        .gif-badge { 
-            position: absolute; 
-            top: 10px; 
-            right: 10px; 
-            background: rgba(0,0,0,0.7); /* আগের মতো একটু হালকা ব্যাকগ্রাউন্ড */
-            color: #fff; 
-            font-size: 12px; 
-            padding: 5px 10px; 
-            border-radius: 4px; /* ✅ চারকোনা করা হয়েছে */
-            border: 1px solid var(--brand-color); /* ✅ লাল বর্ডার ফেরত আনা হয়েছে */
-            display: none; 
-            font-weight: 600; 
-            pointer-events: none; 
-        }
 
         h2 { margin: 0 0 5px 0; font-size: 18px; line-height: 1.4; height: 50px; overflow: hidden;}
         
@@ -78,14 +62,13 @@
 
     <div id="loadingDiv" style="text-align:center; padding: 50px;">
         <div class="loader"></div>
-        <p style="margin-top:15px; color:#a4b0be; font-size:14px;">ভিডিও লোড হচ্ছে...</p>
+        <p style="margin-top:15px; color:#a4b0be; font-size:14px;">লোড হচ্ছে...</p>
     </div>
 
     <div class="card" id="videoCard" style="display: none;">
-        <div class="thumbnail-container" onclick="playGifPreview()">
+        <div class="thumbnail-container" id="thumbContainer">
             <img src="" alt="Thumbnail" id="videoThumb">
-            <i class="fas fa-lock lock-icon"></i>
-            <div id="gifBadge" class="gif-badge"><i class="fas fa-play" style="font-size: 10px;"></i> Play</div>
+            <i class="fas fa-lock lock-icon" id="lockIcon"></i>
         </div>
         
         <h2 id="videoTitle">লোড হচ্ছে...</h2>
@@ -93,7 +76,7 @@
         <div class="progress-container">
             <div class="progress-header">
                 <span>আনলক স্ট্যাটাস</span>
-                <span class="highlight"><span id="adsWatched">0</span>/3 সম্পন্ন</span>
+                <span class="highlight"><span id="adsWatched">0</span>/<span id="totalAdsNeeded">3</span> সম্পন্ন</span>
             </div>
             <div class="progress-bar-bg">
                 <div class="progress-fill" id="progressFill"></div>
@@ -105,7 +88,7 @@
                 Next <i class="fas fa-forward"></i>
             </button>
             <button class="btn btn-ad" id="watchAdBtn" onclick="handleAdClick()">
-                <i class="fas fa-play-circle"></i> অ্যাড দেখুন (0/3)
+                <i class="fas fa-play-circle"></i> অ্যাড দেখুন
             </button>
         </div>
     </div>
@@ -128,11 +111,11 @@
         };
 
         let db;
-        let siteConfig = { adsgramId: "", adsterraLink: "" };
+        let siteConfig = { adsgramId: "", requiredAds: 3 }; // ডিফল্ট ৩টি অ্যাড
+        let requiredAdsCount = 3;
         let videos = [];
         let currentIndex = 0;
         let adsWatchedCount = 0;
-        const requiredAds = 3;
         let adsController = null;
 
         if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
@@ -141,21 +124,27 @@
         fetchData();
 
         function fetchData() {
+            // অ্যাডমিন প্যানেলের সেটিংস আনা হচ্ছে
             db.ref('siteConfig').on('value', snap => {
                 if(snap.val()) {
                     siteConfig = snap.val();
+                    requiredAdsCount = parseInt(siteConfig.requiredAds) || 3;
+                    document.getElementById('totalAdsNeeded').innerText = requiredAdsCount;
+                    
                     if(siteConfig.adsgramId && !adsController) {
                         try {
                             adsController = window.Adsgram.init({ blockId: siteConfig.adsgramId });
                         } catch(e) { console.error("Adsgram Error", e); }
                     }
+                    updateProgress();
                 }
             });
 
-            db.ref('bot_videos').orderByChild('timestamp').once('value', snap => {
+            // আনলিমিটেড ভিডিওগুলো ডাটাবেস থেকে আনা হচ্ছে
+            db.ref('bot_videos').orderByChild('timestamp').on('value', snap => {
                 let tempVideos = [];
                 snap.forEach(child => { tempVideos.push(child.val()); });
-                videos = tempVideos.reverse(); 
+                videos = tempVideos.reverse(); // নতুন ভিডিও আগে দেখাবে
                 
                 if(videos.length > 0) {
                     document.getElementById('loadingDiv').style.display = 'none';
@@ -173,60 +162,54 @@
             
             document.getElementById('videoTitle').innerText = currentVideo.title;
             
-            const imgElement = document.getElementById('videoThumb');
-            imgElement.src = currentVideo.thumb;
-            imgElement.style.filter = "blur(2.5px) brightness(0.65)";
-            
-            if(currentVideo.gif) {
-                document.getElementById('gifBadge').style.display = "block";
-            } else {
-                document.getElementById('gifBadge').style.display = "none";
-            }
+            const container = document.getElementById('thumbContainer');
+            container.innerHTML = `
+                <img src="${currentVideo.thumb}" alt="Thumbnail" id="videoThumb" style="width: 100%; height: 100%; object-fit: cover; filter: blur(2.5px) brightness(0.65); transition: all 0.3s ease;">
+                <i class="fas fa-lock lock-icon" id="lockIcon"></i>
+            `;
             
             adsWatchedCount = 0;
-            
             const btn = document.getElementById('watchAdBtn');
-            btn.innerHTML = `<i class="fas fa-play-circle"></i> অ্যাড দেখুন (0/${requiredAds})`;
+            btn.innerHTML = `<i class="fas fa-play-circle"></i> অ্যাড দেখুন (0/${requiredAdsCount})`;
             btn.style.background = "linear-gradient(135deg, #3742fa, #5352ed)";
             btn.disabled = false;
             
             updateProgress();
         }
 
-        function playGifPreview() {
-            const currentVideo = videos[currentIndex];
-            if(currentVideo.gif) {
-                const imgElement = document.getElementById('videoThumb');
-                imgElement.src = currentVideo.gif;
-                imgElement.style.filter = "blur(1px) brightness(0.85)";
-                document.getElementById('gifBadge').style.display = "none"; 
-                if(tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
-            }
-        }
-
         function updateProgress() {
             document.getElementById('adsWatched').innerText = adsWatchedCount;
-            const percentage = (adsWatchedCount / requiredAds) * 100;
+            const percentage = (adsWatchedCount / requiredAdsCount) * 100;
             document.getElementById('progressFill').style.width = percentage + '%';
         }
 
         function nextVideo() {
             currentIndex++;
-            if(currentIndex >= videos.length) currentIndex = 0; 
+            if(currentIndex >= videos.length) currentIndex = 0; // সব ভিডিও শেষ হলে আবার প্রথম থেকে শুরু হবে
             updateUI();
             if(tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
         }
 
-        function handleAdClick() {
-            if(adsWatchedCount >= requiredAds) {
-                if(siteConfig.adsterraLink && siteConfig.adsterraLink.trim() !== "") {
-                    window.open(siteConfig.adsterraLink, '_blank');
-                    setTimeout(() => {
-                         window.location.href = videos[currentIndex].link;
-                    }, 500);
-                }
-                return;
+        function unlockVideoInline() {
+            const currentVideo = videos[currentIndex];
+            const container = document.getElementById('thumbContainer');
+            
+            let isDirectVideo = currentVideo.link.match(/\.(mp4|webm|mkv|ogg)/i);
+            
+            if (isDirectVideo) {
+                container.innerHTML = `<video src="${currentVideo.link}" controls autoplay playsinline style="width:100%; height:100%; border-radius:14px; object-fit:cover; background:#000;"></video>`;
+            } else {
+                container.innerHTML = `<iframe src="${currentVideo.link}" frameborder="0" allowfullscreen style="width:100%; height:100%; border-radius:14px; background:#000;"></iframe>`;
             }
+
+            const btn = document.getElementById('watchAdBtn');
+            btn.innerHTML = '<i class="fas fa-check-circle"></i> ভিডিও আনলক হয়েছে!';
+            btn.style.background = "linear-gradient(135deg, #2ed573, #2bad60)";
+            btn.disabled = true;
+        }
+
+        function handleAdClick() {
+            if(adsWatchedCount >= requiredAdsCount) return;
             showAdsgram();
         }
 
@@ -240,35 +223,25 @@
                     adsWatchedCount++;
                     updateProgress();
                     
-                    if (adsWatchedCount >= requiredAds) {
-                        if(siteConfig.adsterraLink && siteConfig.adsterraLink.trim() !== "") {
-                            btn.disabled = false;
-                            btn.innerHTML = '<i class="fas fa-unlock"></i> আনলকড ভিডিওটি দেখুন';
-                            btn.style.background = "linear-gradient(135deg, #ff9f43, #ff6b6b)";
-                            if(tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
-                        } else {
-                            btn.innerHTML = '<i class="fas fa-check-circle"></i> রিডাইরেক্ট হচ্ছে...';
-                            btn.style.background = "linear-gradient(135deg, #2ed573, #2bad60)";
-                            if(tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
-                            
-                            setTimeout(() => {
-                                window.location.href = videos[currentIndex].link; 
-                            }, 800);
-                        }
+                    if (adsWatchedCount >= requiredAdsCount) {
+                        if(tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+                        setTimeout(() => {
+                            unlockVideoInline(); 
+                        }, 500);
                     } else {
                         btn.disabled = false;
-                        btn.innerHTML = `<i class="fas fa-play-circle"></i> অ্যাড দেখুন (${adsWatchedCount}/${requiredAds})`;
+                        btn.innerHTML = `<i class="fas fa-play-circle"></i> অ্যাড দেখুন (${adsWatchedCount}/${requiredAdsCount})`;
                         if(tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
                     }
                 }).catch((result) => {
                     btn.disabled = false;
-                    btn.innerHTML = `<i class="fas fa-play-circle"></i> অ্যাড দেখুন (${adsWatchedCount}/${requiredAds})`;
+                    btn.innerHTML = `<i class="fas fa-play-circle"></i> অ্যাড দেখুন (${adsWatchedCount}/${requiredAdsCount})`;
                     tg.showAlert("⚠️ আপনি অ্যাডটি সম্পূর্ণ দেখেননি বা লোড হয়নি। আবার চেষ্টা করুন।");
                 });
             } else {
                 tg.showAlert("অ্যাড সিস্টেম লোড হয়নি। অ্যাডমিন প্যানেলে Adsgram ID সেট করা আছে কি না চেক করুন।");
                 btn.disabled = false;
-                btn.innerHTML = `<i class="fas fa-play-circle"></i> অ্যাড দেখুন (${adsWatchedCount}/${requiredAds})`;
+                btn.innerHTML = `<i class="fas fa-play-circle"></i> অ্যাড দেখুন (${adsWatchedCount}/${requiredAdsCount})`;
             }
         }
     </script>
